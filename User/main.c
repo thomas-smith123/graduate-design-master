@@ -28,6 +28,8 @@
 #include "bsp_usart2.h"
 #include "GPS.h"
 #include "pcf8563.h"
+#include "linklist.h"
+#include "time.h"
 u8 status;		 //用于判断接收/发送状态
 u8 txbuf[4];	 //发送缓冲
 u8 i; 
@@ -42,26 +44,39 @@ float ADC_ConvertedValueLocal;
   * @retval 无
   */
 int main(void)
-{      
+{     
+	double diff_time;	
 	u8 j,res;
 		uint8_t i, r;
-u8 rxbuf[16];	 //接收缓冲
-
+	u8 rxbuf[16];	 //接收缓冲
+	uint8_t ID_Num[10],mingwen1[16],mingwen2[16],miwen1[16],miwen2[16];
 	/* 128 bit key */
 	uint8_t key[] = {
 		0x0f, 0x15, 0x71, 0xc9, 0x47, 0xd9, 0xe8, 0x59, 
 		0x0c, 0xb7, 0xad, 0xd6, 0xaf, 0x7f, 0x67, 0x98};
 	uint8_t plaintext[16];// = "1305054145jrd";  
 	uint8_t ciphertext[AES_BLOCK_SIZE];
+	uint8_t frame[42]=
+		{1,3,0,5,0,5,4,1,4,5,
+									0,123,0,0,
+									2,0,1,7,0,5,0,1,1,3,4,5,
+									0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+		};
+
 	const uint8_t const_cipher[AES_BLOCK_SIZE] = {
 		0xff, 0x0b, 0x84, 0x4a, 0x08, 0x53, 0xbf, 0x7c,
 		0x69, 0x34, 0xab, 0x43, 0x64, 0x14, 0x8f, 0xb9};	
 	uint8_t roundkeys[AES_ROUND_KEY_SIZE];
 int rand_num;
+		__int64 time1,time2;
 		char verify_code[20]="abcde";
 extern	TIME today;
 		TIME now;
 	_SaveData Save_Data;
+	uint8_t *syn,*seq,*ack,*fin,*time,*data;
+	syn=frame+10;seq=frame+11;
+	ack=frame+12;fin=frame+13;
+	time=frame+14;data=frame+26;
   /* 串口1初始化 */
 			delay_init();	    	 //延时函数初始化	  
 	NVIC_Configuration(); 	 //设置NVIC中断分组2:2位抢占优先级，2位响应优先级 	LED_Init();			     //LED端口初始化
@@ -107,8 +122,6 @@ extern	TIME today;
 //	}
 //	if ( AES_BLOCK_SIZE != i ) { printf("\nENCRYPT WRONG\n\n"); }
 //	else { printf("\nENCRYPT CORRECT\n\n"); }
-
-
 	// decryption
 	printf("Plain text:\n");
 	for (i = 0; i < AES_BLOCK_SIZE; i++) {
@@ -132,9 +145,6 @@ extern	TIME today;
 		printf("\r\n   正在检测NRF与MCU是否正常连接。。。\r\n");
 //		LCD_DispStr(10, 10, (uint8_t *)"CHECKING CONNECTED SITUATION...", RED);	
 	}
-
-	
-	
 	/********************伪随机数*********************/
 	srand(48);
 	srand(rand());//伪随机数
@@ -163,17 +173,38 @@ extern	TIME today;
 		parseGpsBuffer();
 //		printGpsBuffer();
 		now =PCF8563_GetTime();	
+//		Creat_user("thomas","1305054145",)
 		printf("pcf8563 time %d %d %d %d %d\n",now.year,now.month,now.day,now.hour,now.mint);	
 //		UART1SendString("空闲中\r\n",strlen("空闲中\r\n"));	delay_ms(5000);
 		    printf("\r\n 从机端 进入接收模式\r\n"); 
 //		LCD_DispStr(10, 30, (uint8_t *)"SLAVE IN RX_MODE.", RED);	
-
+    printf("\r \n主机进入接收模式");
     NRF_RX_Mode();
     /*等待接收数据*/
-    status = NRF_Rx_Dat(rxbuf);
-		status = NRF_Rx_Dat(rxbuf+4);
-		status = NRF_Rx_Dat(rxbuf+8);
-		status = NRF_Rx_Dat(rxbuf+12);
+    status = NRF_Rx_Dat(ID_Num);
+		status = NRF_Rx_Dat(ID_Num+4);
+		status = NRF_Rx_Dat(ID_Num+8);
+		status = NRF_Rx_Dat(ID_Num+12);
+		status = NRF_Rx_Dat(miwen1);
+		status = NRF_Rx_Dat(miwen1+4);
+		status = NRF_Rx_Dat(miwen1+8);
+		status = NRF_Rx_Dat(miwen1+12);
+		status = NRF_Rx_Dat(miwen2);
+		status = NRF_Rx_Dat(miwen2+4);
+		status = NRF_Rx_Dat(miwen2+8);
+		status = NRF_Rx_Dat(miwen2+12);
+/*******************查找对应ID的密钥***********假设密码已知*********/
+		aes_decrypt_128(roundkeys,ID_Num,ID_Num);
+		aes_decrypt_128(roundkeys,miwen1,miwen1);
+		aes_decrypt_128(roundkeys,miwen2,miwen2);
+		/********************判断包的时间******************/
+				now =PCF8563_GetTime();	
+				//time1=now.year*////////////////////////////////next///////
+				//diff_time=difftime(-*time);////////////////////next///////
+/*		if(now.year==*(time+2)*10+ *(time+3))
+			if(now.month==*(time+4)*10+*(time+5))
+				if(now.day==*(time+6)*10+*(time+7))
+	*/				
 //    /*判断接收状态*/
     if(status == RX_DR)
     {	
@@ -185,12 +216,12 @@ extern	TIME today;
     }   
 
 	}
-	while(1)	
+/*	while(1)	
 	{		
 		parseGpsBuffer();
 		printGpsBuffer();
 	};
-
+*/
 	
   while(1)
   { 

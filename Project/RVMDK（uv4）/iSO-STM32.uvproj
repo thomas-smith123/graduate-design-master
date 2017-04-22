@@ -627,6 +627,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\User\pcf8563.c</FilePath>
             </File>
+            <File>
+              <FileName>linklist.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\linklist.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
