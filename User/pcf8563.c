@@ -101,28 +101,34 @@ TIME PCF8563_GetTime(void)
   int tmp;
   TIME getTIME;
   /***********算法有问题**************/
-  tmp = PCF8563_Read(Seconds)&0x7f;
-  tmp =(tmp/16)*10+tmp%16;
+  tmp = PCF8563_Read(Seconds);//&0x7f;
+ // tmp =(tmp/16)*10+tmp%16;
+	tmp=tmp&0x7f;
   getTIME.second = tmp;//????????????????
 
-   tmp = PCF8563_Read(Minutes)&0x7f;
-  tmp =(tmp/16)*10+tmp%16;
+   tmp = PCF8563_Read(Minutes);//&0x7f;
+//  tmp =(tmp/16)*10+tmp%16;
+		tmp=tmp&0x7f;	
   getTIME.mint = tmp;
+
   //???????????????,??????
-  tmp = PCF8563_Read(Hours)&0x3f;
-  tmp =(tmp/16)*16+tmp%16;
+  tmp = PCF8563_Read(Hours);//&0x3f;
+//  tmp =(tmp/16)*10+tmp%16;
+		tmp=tmp&0x3f;
   getTIME.hour = tmp;
 
-  tmp = PCF8563_Read(Days)&0x3f;
-  tmp =(tmp/16)*10+tmp%16;
+  tmp = PCF8563_Read(Days);//&0x3f;
+//  tmp =(tmp/16)*10+tmp%16;
+	tmp=tmp&0x3f;
   getTIME.day = tmp;
 
-  tmp = PCF8563_Read(Months)&0x1f;
-  tmp =(tmp/16)*10+tmp%16;
+  tmp = PCF8563_Read(Months);//&0x1f;
+//  tmp =(tmp/16)*10+tmp%16;
+tmp=tmp&0x1f;
   getTIME.month = tmp;
 
-  tmp = PCF8563_Read(Years)&0x1f;
-  tmp =(tmp/16)*16+tmp%16;
+  tmp = PCF8563_Read(Years);//&0x1f;
+//  tmp =(tmp/16)*10+tmp%16;
   getTIME.year = tmp;
  
   return getTIME;

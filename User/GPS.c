@@ -1,7 +1,12 @@
 #include "bsp_usart3.h"
 #include "pcf8563.h"
+#include "time.h"
+#include "stdlib.h"
 _SaveData Save_Data;
-TIME today;
+//TIME today;
+//__int64 time2;
+struct	tm *now_GPS;
+
 void errorLog(int num)
 {
 	
@@ -16,6 +21,7 @@ void parseGpsBuffer()
 	char *subString;
 	char *subStringNext;
 	char i = 0;
+	now_GPS=(struct tm*)malloc(sizeof(struct tm));	
 	if (Save_Data.isGetData)
 	{
 		Save_Data.isGetData = false;
@@ -65,14 +71,18 @@ void parseGpsBuffer()
 
 		}
 	
-		today.second=(Save_Data.UTCTime[4]-'0')*10+(Save_Data.UTCTime[5]-'0');
-		today.mint=(Save_Data.UTCTime[2]-'0')*10+(Save_Data.UTCTime[3]-'0');
-		today.hour=(Save_Data.UTCTime[0]-'0')*10+(Save_Data.UTCTime[1]-'0');
-		today.day=(Save_Data.UTCDate[0]-'0')*10+(Save_Data.UTCDate[1]-'0');
-		today.month=(Save_Data.UTCDate[2]-'0')*10+(Save_Data.UTCDate[3]-'0');
-		today.year=(Save_Data.UTCDate[4]-'0')*10+(Save_Data.UTCDate[5]-'0');
-		PCF_SetTime(today.year,today.month,today.day,today.hour,today.mint,today.second);
+		now_GPS->tm_sec=(Save_Data.UTCTime[4]-'0')*10+(Save_Data.UTCTime[5]-'0');
+		now_GPS->tm_min=(Save_Data.UTCTime[2]-'0')*10+(Save_Data.UTCTime[3]-'0');
+		now_GPS->tm_hour=(Save_Data.UTCTime[0]-'0')*10+(Save_Data.UTCTime[1]-'0');
+		now_GPS->tm_mday=(Save_Data.UTCDate[0]-'0')*10+(Save_Data.UTCDate[1]-'0');
+		now_GPS->tm_mon=(Save_Data.UTCDate[2]-'0')*10+(Save_Data.UTCDate[3]-'0');
+		now_GPS->tm_year=(Save_Data.UTCDate[4]-'0')*10+(Save_Data.UTCDate[5]-'0');
+		PCF_SetTime(now_GPS->tm_year,now_GPS->tm_mon,now_GPS->tm_mday,now_GPS->tm_hour,now_GPS->tm_min,now_GPS->tm_sec);
 	 printf("GPS 时间已设置 \n");
+		printf("GPS时间 :");	printf("%d年 ",now_GPS->tm_year);printf("%d月 ",now_GPS->tm_mon);printf("%d日 ",now_GPS->tm_mday);
+		printf("%d时 ",now_GPS->tm_hour);printf("%d分 ",now_GPS->tm_min);printf("%d秒 \n",now_GPS->tm_sec);
+//		time2=mktime(now_GPS);
+//		printf("time2_GPS %lld \n",time2);
 	}
 }
 
